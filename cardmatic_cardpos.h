@@ -247,8 +247,8 @@ class TubeTests
         
         CardReader m_switches;	// set of switches to close in cardreader
 
-		const std::map<unsigned int, 
-		    unsigned int> m_regulated_Bplus_maxCurrentParameters;
+        const std::map<unsigned int, 
+            unsigned int> m_regulated_Bplus_maxCurrentParameters;
 
 
         //----------------------------------------------------------------------                                                          
@@ -320,10 +320,10 @@ class TubeTests
         // See WE Cardmatic manual, sections 5.52-5.53, 5.61 and 5.63 for more details
         void adjustHeaterSettings(Tube &tube,
                                   Heater heaterType,
-						          bool tieFilToCat,
-						          bool ctRes,
-						          bool ampTube,
-						          bool filamentary);
+                                  bool tieFilToCat,
+                                  bool ctRes,
+                                  bool ampTube,
+                                  bool filamentary);
 
 
         // Function: determines the B+ voltage, in 10 volt increments
