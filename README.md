@@ -63,7 +63,7 @@ To compile those source files in Linux:
 3. Type in the following line
 
 ```
-Make
+make
 ```
 
 Once compiled, type the following to run the program:
@@ -89,7 +89,7 @@ To compile those source files in Linux/Ubuntu:
 3. Type in the following line
 
 ```
-Make
+make
 ```
 
 Once compiled, type the following to run the program:
