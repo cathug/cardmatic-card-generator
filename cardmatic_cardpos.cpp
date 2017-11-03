@@ -13,6 +13,7 @@
 #include <cassert>
 #include "cardmatic_cardpos.h"  // header file for methods
 #include "cardmatic_globals.h"  // global variables
+#include <algorithm>
 
 
 
@@ -23,6 +24,20 @@
 //------------------------------------------------------------------------------
 
 // default constructor
+// pre: all pins are valid
+// param:   tubeID - Tube ID
+//          grid - grid pin
+//          cathode - cathode pin
+//          screen - screen pin
+//          suppressor - suppressor pin
+//          plate - plate pin
+//          aux - auxiliary (for cardmatic)
+//          filPlus - positive filament pin
+//          filMinus - negative filament pin
+//          filCommon - common filament pin`
+//          string socket - socket base type
+// post: member variables m_tubeID, m_sections, m_filament, and m_socket are 
+//          initialized.
 Tube::Tube(const std::string tubeID,
            char grid,
            char cathode,
@@ -44,24 +59,24 @@ Tube::Tube(const std::string tubeID,
 
 //------------------------------------------------------------------------------
 
-//// alternative constructor
-////i.e. Tube(
-////        "tubeID",
-////        {grid, cathode, screen, suppressor, plate, aux},
-////        std::make_tuple(filPlus, filMinus, filCommon),
-////        "socket"
-////    )
-//Tube::Tube(const std::string tubeID,
-//           TubeSection ts,
-//           std::tuple<char, char, char> filament,
-//           const std::string socket) :                    
-//    m_tubeID(tubeID),
-//    m_sections(ts),
-//    m_filament(filament),
-//    m_socket(socket)
-//{
+// alternative constructor
+//i.e. Tube(
+//        "tubeID",
+//        {grid, cathode, screen, suppressor, plate, aux},
+//        std::make_tuple(filPlus, filMinus, filCommon),
+//        "socket"
+//    )
+Tube::Tube(const std::string tubeID,
+           TubeSection ts,
+           std::tuple<char, char, char> filament,
+           const std::string socket) :                    
+    m_tubeID(tubeID),
+    m_sections{ts},
+    m_filament{filament},
+    m_socket(socket)
+{
 
-//}
+}
 
 //------------------------------------------------------------------------------
 
@@ -72,6 +87,80 @@ Tube::~Tube()
 }
 
 //------------------------------------------------------------------------------
+
+// helper to append a non-null string to a string
+// used in tubePinsAreValid() only
+void Tube::appendCharToString(char ch, 
+                              std::string &str)
+{
+    if(ch != '\0') { str.push_back(ch); }
+}
+
+//------------------------------------------------------------------------------
+
+// Function to check if tube pin assignments are valid, 
+// pre: To be called (immediately) after constructor
+// returns: TUBE_PINS_OK if pin assignments are VALID.  Otherwise
+//          TUBE_INVALID_PIN_ASSIGN, 
+//          TUBE_PINS_NOT_UNIQUE, or 
+//          TUBE_NULL_SECTION
+int Tube::tubePinsAreValid()
+{   
+    std::string s;
+    
+    for (size_t j = 0; j < m_sections.size(); j++ )
+    {   
+        // make sure that pin cap cannot be a grid, screen plate or aux
+        // as Cardmatic does not allow this
+        if (m_sections.at(j).grid == PIN_CAP || 
+            m_sections.at(j).screen == PIN_CAP || 
+            m_sections.at(j).plate == PIN_CAP || 
+            m_sections.at(j).aux == PIN_9 || 
+            m_sections.at(j).aux == PIN_CAP)
+        {
+            return TUBE_INVALID_PIN_ASSIGN;
+        }
+    
+    
+    
+        // figure out if there a duplicate pin assignment exists
+        appendCharToString(m_sections.at(j).grid, s);
+        appendCharToString(m_sections.at(j).cathode, s);
+        appendCharToString(m_sections.at(j).screen, s);
+        appendCharToString(m_sections.at(j).suppressor, s);
+        appendCharToString(m_sections.at(j).plate, s);
+        appendCharToString(m_sections.at(j).aux, s);
+        appendCharToString(std::get<FIL_POS>(m_filament), s);
+        appendCharToString(std::get<FIL_NEG>(m_filament), s);
+        appendCharToString(std::get<FIL_COM>(m_filament), s);
+        
+        
+        for (size_t i = 0; i < s.size(); i++)
+        {
+            // make sure the letters are in set = {A...L} - {I}
+            if (s.at(i) < 'A' && s.at(i) > 'L' && s.at(i) == 'I')
+            { 
+                return TUBE_INVALID_PIN_ASSIGN;  // invalid cardmatic pins
+            }
+        }
+        
+//        std::cout << "s contains: " << s << " size = " << s.size() << std::endl;        
+        std::sort(s.begin(), s.end() );        
+//        std::cout << "s contains: " << s << " size = " << s.size() << std::endl;
+
+        if (std::unique(s.begin(), s.end()) == s.end() )
+        {
+            return TUBE_PINS_OK;
+        }
+        
+        return TUBE_PINS_NOT_UNIQUE;   // not unique
+    }
+    
+    return TUBE_NULL_SECTION;  // invalid section
+}
+
+//------------------------------------------------------------------------------
+
 
 // helper to append a tube section to the vector
 // pre:     grid = pin 1...9
@@ -88,39 +177,24 @@ Tube::~Tube()
 //          plate - plate 
 //          aux - auxiliary pin
 // post: contents of tube are updated
-bool Tube::appendTubeSection(char grid,
+void Tube::appendTubeSection(char grid,
                              char cathode,
                              char screen,
                              char suppressor,
                              char plate,
                              char aux)
-{
-    if (grid == PIN_CAP || screen == PIN_CAP || plate == PIN_CAP || 
-        aux == PIN_9 || aux == PIN_CAP || m_sections.size() < 1)
-    {
-        return false;
-    }
-    
-    m_sections.push_back( {grid, cathode, screen, suppressor, plate, aux}
-    );
-        
-    return true;
+{   
+    m_sections.push_back( {grid, cathode, screen, suppressor, plate, aux} );
 }
 
 //------------------------------------------------------------------------------
 
-//bool Tube::appendTubeSection(TubeSection ts)
-//{
-//    if (ts.grid == PIN_CAP || ts.screen == PIN_CAP || ts.plate == PIN_CAP || 
-//        ts.aux == PIN_9 || ts.aux == PIN_CAP || m_sections.size() < 1)
-//    {
-//        return false;
-//    }
-//    
-//    m_sections.emplace_back(ts);
-//        
-//    return true;
-//}
+// alternative version of the above 
+// but a TubeSection struct is passed instead
+void Tube::appendTubeSection(TubeSection ts)
+{
+    m_sections.push_back(ts);
+}
 
 //------------------------------------------------------------------------------
 
@@ -132,30 +206,27 @@ void Tube::setSingleTubeSectionSwitches(CardReader &switches,
                                         TubeType tubeType,
                                         bool hasFilament,
                                         bool isSpecialTube)
-{
+{   
     char filPlus = std::get<FIL_POS>(m_filament);
     char filMinus = std::get<FIL_NEG>(m_filament);
     char filCommon = std::get<FIL_COM>(m_filament);
-    
-    if (hasFilament && 
-        filPlus >= 'A' && filMinus <= 'J' && filPlus != 'I' && 
-        filPlus >= 'A' && filMinus <= 'J' && filPlus != 'I' &&  
-        filPlus != filMinus)
+
+    if (hasFilament)
     {
-        if (filCommon == '\0')  // if no center tap component
+        switches.insert(std::make_pair(filPlus, ROW_1));
+        
+        if (std::get<FIL_COM>(m_filament) == '\0')  // if no center tap component
         {
-            switches.insert(std::make_pair(filPlus, ROW_1));
             switches.insert(std::make_pair(filMinus, ROW_2));            
         }
 
         else // if (filCommon != '\0'), i.e. center tap component exists
         {
             // tie -ve and + heaters together, to row 1 (+ve)
-            switches.insert(std::make_pair(filPlus, ROW_1));
             switches.insert(std::make_pair(filMinus, ROW_1));
             switches.insert(std::make_pair(filCommon, ROW_2));
         }
-    }   // else do nothing
+    }
     
     
     if (tubeType >= DIODE)
@@ -181,7 +252,7 @@ void Tube::setSingleTubeSectionSwitches(CardReader &switches,
         if (isSpecialTube)
         {
             switches.insert(std::make_pair(m_sections.front().aux, ROW_8));
-        }   
+        }
     }
 }
 

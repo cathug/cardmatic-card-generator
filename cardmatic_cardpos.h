@@ -23,32 +23,7 @@ class Tube
     public:
     
         friend class TubeTests;
-        //----------------------------------------------------------------------
-        //  constructors, destructor
-        //----------------------------------------------------------------------  
         
-        Tube(const std::string tubeID,
-             char grid,
-             char cathode,
-             char screen,
-             char suppressor,
-             char plate,
-             char aux,
-             char filPlus,
-             char filMinus,
-             char filCommon,
-             const std::string socket);  // default constructor
-    
-    
-//        Tube(const std::string tubeID,
-//             TubeSection ts,
-//             std::tuple<char, char, char> filament,
-//             const std::string socket);  // alternative constructor
-        
-        
-        ~Tube();                         // destructor
-        
-    
         //----------------------------------------------------------------------
         //  enums and structs
         //----------------------------------------------------------------------        
@@ -100,10 +75,56 @@ class Tube
         }TubeFilament;
         
         
+        typedef enum TubeErrorCodes
+        {
+            TUBE_NULL_SECTION = -2,
+            TUBE_INVALID_PIN_ASSIGN,
+            TUBE_PINS_NOT_UNIQUE,
+            TUBE_PINS_OK,
+            
+        }TubeErrorCodes;
+        
+        
+        
+        //----------------------------------------------------------------------
+        //  constructors, destructor
+        //----------------------------------------------------------------------  
+        
+        Tube(const std::string tubeID,
+             char grid,
+             char cathode,
+             char screen,
+             char suppressor,
+             char plate,
+             char aux,
+             char filPlus,
+             char filMinus,
+             char filCommon,
+             const std::string socket);  // default constructor
     
+    
+        Tube(const std::string tubeID,
+             TubeSection ts,
+             std::tuple<char, char, char> filament,
+             const std::string socket);  // alternative constructor
+        
+        
+        ~Tube();                         // destructor
+        
+    
+
         //----------------------------------------------------------------------
         //  member functions
         //---------------------------------------------------------------------- 
+    
+        // Function to check if tube pin assignments are valid, 
+        // pre: To be called (immediately) after constructor
+        // returns: TUBE_PINS_OK if pin assignments are VALID.  Otherwise
+        //          TUBE_INVALID_PIN_ASSIGN, 
+        //          TUBE_PINS_NOT_UNIQUE, or 
+        //          TUBE_NULL_SECTION
+        int tubePinsAreValid(); 
+    
     
         // helper to append a tube section to the linked list
         // pre:     grid = pin 1...9
@@ -120,14 +141,17 @@ class Tube
         //          plate - plate 
         //          aux - auxiliary pin
         // post: contents of tube are updated
-        bool appendTubeSection(char grid,
+        void appendTubeSection(char grid,
                                char cathode,
                                char screen,
                                char suppressor,
                                char plate,
                                char aux);
-                               
-//        bool appendTubeSection(TubeSection ts); // alternative version
+        
+
+        // alternative version of the above 
+        // but a TubeSection struct is passed instead
+        void appendTubeSection(TubeSection ts); 
                                
         
         // function to activate switches corresponding to single section of a tube
@@ -151,6 +175,17 @@ class Tube
 
 
     private:
+        //----------------------------------------------------------------------
+        //  helpers
+        //----------------------------------------------------------------------
+
+        // helper to append a non-null string to a string
+        // used in tubePinsAreValid() only
+        void appendCharToString(char ch,
+                                std::string &str);
+
+    
+    
         //----------------------------------------------------------------------
         //  member variables
         //----------------------------------------------------------------------

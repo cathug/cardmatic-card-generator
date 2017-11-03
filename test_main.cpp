@@ -35,7 +35,14 @@ int main(int argc, char* argv[])
         ECC83.PIN_4, ECC83.PIN_5, ECC83.PIN_9, 
         "B9A"
     );
-		
+	
+	if ( ECC83.tubePinsAreValid() != ECC83.TUBE_PINS_OK )
+	{
+        std::cout << "Invalid Tube Pins" << std::endl;
+	    return -1; 
+	}
+	
+	
     ECC83.appendTubeSection(ECC83.PIN_7, ECC83.PIN_8, '\0', '\0', ECC83.PIN_6, '\0');
     ECC83.setTwinTubeSectionSwitches(
         tests.getClosedSwitches(), 
@@ -50,6 +57,8 @@ int main(int argc, char* argv[])
     tests.B_plusCurrentCheck( b_plus, current );
     tests.umho_meterShunt( gm );
     tests.outputSwitchesClosed();
+    
+    return 0;
 }
 
 //TODO: implement pseudocode
